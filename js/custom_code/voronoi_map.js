@@ -3,21 +3,32 @@ L.mapbox.accessToken = 'pk.eyJ1Ijoicm9iaW5saW5hY3JlIiwiYSI6IjAwYTg3MDAwNmFlZTk3M
     map.setView([53,0],7)
     url = '';
 
-var p1 = $.ajax("data/uk.json")
-var p2 = $.ajax("data/data_template.csv")
+// These deferreds are used when we have a proper web server.
+// var p1 = $.ajax("data/uk.json")
+// var p2 = $.ajax("data/data_template.csv")
+
+
 var p3 = jQuery.Deferred();
 map.on('ready', function(d) {p3.resolve( "hurray" )})
  
  
 // Wait for all data to be loaded, and for the map to be ready, and then draw the map
-$.when(p1, p2,p3).done(function(uk_clip_data, csvdata, x) {
+// $.when(p1, p2,p3).done(function(uk_clip_data, csvdata, x) {
     
-    var uk_clip_data = uk_clip_data[0]
-    var points_data = d3.csv.parse(csvdata[0])
+//     var uk_clip_data = uk_clip_data[0]
+//     var points_data = d3.csv.parse(csvdata[0])
+//     voronoi_map(map, uk_clip_data, points_data)
+
+// })
+
+
+$.when(p3).done(function(x) {
+    
+    var uk_clip_data = uk
+    var points_data = points
     voronoi_map(map, uk_clip_data, points_data)
 
 })
-
 
 function voronoi_map(map,uk_clip_data, csvdata) {
 
