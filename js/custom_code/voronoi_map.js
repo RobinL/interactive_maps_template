@@ -1,37 +1,30 @@
 L.mapbox.accessToken = 'pk.eyJ1Ijoicm9iaW5saW5hY3JlIiwiYSI6IjAwYTg3MDAwNmFlZTk3MDlhNGIxY2VjNDk5Yjk4NWE1In0.DWAN8Om-9kOnwVTQIiDGaw';
-map = L.mapbox.map('map', 'mapbox.light')
-map.setView([53,0],7)
-url = '';
+    map = L.mapbox.map('map', 'mapbox.light')
+    map.setView([53,0],7)
+    url = '';
 
-voronoi_map(map);
+var p1 = $.ajax("data/uk.json")
+var p2 = $.ajax("data/data_template.csv")
+var p3 = jQuery.Deferred();
+map.on('ready', function(d) {p3.resolve( "hurray" )})
+ 
+ 
+// Wait for all data to be loaded, and for the map to be ready, and then draw the map
+$.when(p1, p2,p3).done(function(uk_clip_data, csvdata, x) {
+    
+    var uk_clip_data = uk_clip_data[0]
+    var points_data = d3.csv.parse(csvdata[0])
+    voronoi_map(map, uk_clip_data, points_data)
 
-
-// var p1 = $.ajax("data/pt_" + offence_variable + "_" + x_axis_variable + ".csv")
-// var p2 = $.ajax("data/individual_data_" + offence_variable + ".csv")
-
-// $.when(p1, p2).done(function(aggdata, inddata) {
-
-//     var agg_data = d3.csv.parse(aggdata[0], csv_accessor_agg)
-//     var individual_data = d3.csv.parse(inddata[0], csv_accessor_individual)
-
-//     my_data_manager_individual = new DataManagerIndividual(individual_data)
-//     var individual_data = my_data_manager_individual.get_data()
-
-//     brush_chart = new BrushChart("#svgholder_brush", agg_data) //The extent of the brush should be determined by the agg data
-
-//     individual_chart = new IndividualChart("#svgholder_ind", individual_data); //Can draw this without data
-
-//     aggregated_chart = new AggregatedChart("#svgholder_agg", agg_data)
-
-//     draw()
-// })
+})
 
 
-function voronoi_map(map) {
+function voronoi_map(map,uk_clip_data, csvdata) {
 
-    var points = [], //Stores all the points for the current metrics
+
+    var points = csvdata, //Stores all the points for the current metrics
         filteredPoints = [],  //Stores the points within the current map bounds (at current zoom level)
-        uk = {}, //Stores data for clipping mask
+        uk = uk_clip_data, //Stores data for clipping mask
         listOfMetrics, //Store the different metrics (metric_1, metric_2 etc)
         lastSelectedPoint,  //So the tooltip 'remembers' where we were when we leave the map area
         plotDataField;  //Which metric?
@@ -69,8 +62,6 @@ function voronoi_map(map) {
         var html = template(template_dict);
         d3.select('#selected')
             .html(html)
-
-
     }
 
 
@@ -367,7 +358,7 @@ function voronoi_map(map) {
  
 
         var allCountries = topojson.object(uk, uk.objects.subunits);
-        allCountries.geometries = [allCountries.geometries[0], allCountries.geometries[4], allCountries.geometries[3]]
+        allCountries.geometries = [allCountries.geometries[0], allCountries.geometries[4], allCountries.geometries[3]]  //England, Wales and Scotland
 
         function projectPoint(x, y) {
             var point = map.latLngToLayerPoint(new L.LatLng(y, x));
@@ -395,25 +386,10 @@ function voronoi_map(map) {
         }
     };
 
-    map.on('ready', function() {
-        d3.json("uk.json", function(uk_data) {
-
-
-            uk = uk_data
-
-            d3.csv("data/data_template.csv", function(data) {
-
-                points = data
-                listOfMetrics = getListOfMetrics(points)
-                drawMetricSelection();
-                drawColourSelection();
-                setColourScale();
-                map.addLayer(mapLayer);
-            })
-
-
-
-        })
-
-    });
+  
+    listOfMetrics = getListOfMetrics(points)
+    drawMetricSelection();
+    drawColourSelection();
+    setColourScale();
+    map.addLayer(mapLayer);
 }
