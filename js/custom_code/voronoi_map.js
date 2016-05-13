@@ -417,7 +417,7 @@ function voronoi_map(map,uk_clip_data, csvdata) {
                 if (metric == "none") {
                     return 1
                  } else {
-                    return 0.4
+                    return 0.6
                  }
 
             })
