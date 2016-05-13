@@ -38,7 +38,8 @@ function voronoi_map(map,uk_clip_data, csvdata) {
         uk = uk_clip_data, //Stores data for clipping mask
         listOfMetrics, //Store the different metrics (metric_1, metric_2 etc)
         lastSelectedPoint,  //So the tooltip 'remembers' where we were when we leave the map area
-        plotDataField;  //Which metric?
+        plotDataField,  //Which metric?
+        colour_scales_dict = {};
 
 
     var voronoi = d3.geom.voronoi()
@@ -58,7 +59,7 @@ function voronoi_map(map,uk_clip_data, csvdata) {
         lastSelectedPoint = point;
         cell.classed('selected', true);
 
-        var format = column_descriptions_data[$("#metricOptions").val()]["format"]
+        var format = column_descriptions_data[$("#shadingOptions").val()]["format"]
 
         var template_dict = {
             name: point.name,
@@ -90,9 +91,10 @@ function voronoi_map(map,uk_clip_data, csvdata) {
 
         var num_steps = 50;
 
-        var map_colour_scale = colScale;
 
-        var axis_scale = d3.scale.linear().domain(colScale.domain()).range([key_height, key_height / 2, 0])
+        var map_colour_scale = colour_scales_dict["#keyOptions"]  ;
+
+        var axis_scale = d3.scale.linear().domain(colour_scales_dict["#keyOptions"]   .domain()).range([key_height, key_height / 2, 0])
 
         var inverted_scale = axis_scale.invert;
 
@@ -130,7 +132,7 @@ function voronoi_map(map,uk_clip_data, csvdata) {
             .orient("left")
             .ticks(10, ",0.2s")
             .tickSize(-10, 0)
-            .tickFormat(column_descriptions_data[$("#metricOptions").val()]["format"])
+            .tickFormat(column_descriptions_data[$("#keyOptions").val()]["format"])
 
         svg.append("g")
             .attr("transform", "translate(" + key_position_left + "," + key_position_top + ")")
@@ -141,7 +143,7 @@ function voronoi_map(map,uk_clip_data, csvdata) {
             .attr("transform", "translate(90," + key_position_top + ") rotate(90)")
             .append("text")
             .text(function(d) {
-                return column_descriptions_data[$("#metricOptions").val()]["long_name"]
+                return column_descriptions_data[$("#keyOptions").val()]["long_name"]
             })
             .style("font-weight", "bold")
             .style("font-size", "12px")
@@ -166,35 +168,59 @@ function voronoi_map(map,uk_clip_data, csvdata) {
 
 
     var setColourScale = function() {
-        // Compute the highest and lowest values of the metric
 
-        plotDataField = d3.select("#metricOptions").node().value
+
+        // Compute the highest and lowest values of the metric
+    
         colourScaleOption = d3.select("#colourOptions").node().value
 
-        var thisFieldData = points.map(function(thisData) {
-            return parseFloat(thisData[plotDataField]);
-        });
+         
 
-        minMetric = Math.min.apply(null, thisFieldData);
-        maxMetric = Math.max.apply(null, thisFieldData);
-        var mid = (maxMetric + minMetric) / 2;
+        _.each(["#shadingOptions", "#pointShadingOptions", "#pointSizeOptions", "#keyOptions"], function(d) {
+            metric = d3.select(d).node().value
 
-        // Need to lookup the scale 
-        if (column_descriptions_data[plotDataField]["domain"] == null) {
-            var domain = [minMetric, mid, maxMetric]
-        } else {
-            domain = column_descriptions_data[plotDataField]["domain"]
-        }
+            var thisFieldData = points.map(function(thisData) {
+                return parseFloat(thisData[metric]);
+            });
 
-        colScale = d3.scale.linear()
+            minMetric = Math.min.apply(null, thisFieldData);
+            maxMetric = Math.max.apply(null, thisFieldData);
+            var mid = (maxMetric + minMetric) / 2;
+
+             // Need to lookup the scale 
+            if (column_descriptions_data[metric]["domain"] == null) {
+                var domain = [minMetric, mid, maxMetric]
+            } else {
+                domain = column_descriptions_data[metric]["domain"]
+            }
+
+            if (metric != "none") {
+            colour_scales_dict[d] = d3.scale.linear()
             .domain(domain)
             .range(colourOptions[colourScaleOption]);
+        } else {
+            colour_scales_dict[d] = d3.scale.linear()
+            .domain([0,0,0])
+            .range(["#000","#000","#000"]);
+
+        }
+
+        })
+
+        colour_scales_dict["#pointSizeOptions"].range([1,3,10])
+
+
+
+
+    
 
     }
 
     var drawMetricSelection = function() {
-        d3.select("#metricOptions").selectAll('option')
-            .data(listOfMetrics)
+
+        _.each(["#shadingOptions", "#pointShadingOptions", "#pointSizeOptions", "#keyOptions"], function(selector) {
+        d3.select(selector).selectAll('option')
+            .data(["none"].concat(listOfMetrics))
             .enter()
             .append("option")
             .attr("value", function(d) {
@@ -204,9 +230,15 @@ function voronoi_map(map,uk_clip_data, csvdata) {
                 return column_descriptions_data[d].long_name
             })
 
-        d3.select("#metricOptions").on("change", function(d) {
+        d3.select(selector).on("change", function(d) {
             drawWithLoading()
         })
+
+    })
+    
+    // First option
+    $("#shadingOptions").val(listOfMetrics[0]);
+    $("#keyOptions").val(listOfMetrics[0]);
 
     }
 
@@ -244,7 +276,7 @@ function voronoi_map(map,uk_clip_data, csvdata) {
     }
 
     var get_options = function() {
-        plotDataField = d3.select("#metricOptions").node().value;
+        plotDataField = d3.select("#shadingOptions").node().value;
         colourScaleOption = d3.select("#colourOptions").node().value;
     }
 
@@ -315,13 +347,27 @@ function voronoi_map(map,uk_clip_data, csvdata) {
             return "M" + point.cell.join("L") + "Z";
         }
 
-        plotDataField = d3.select("#metricOptions").node().value
+        plotDataField = d3.select("#shadingOptions").node().value
 
         svgPoints.append("path")
             .attr("class", "point-cell")
             .attr("d", buildPathFromPoint)
             .style("fill", function(d) {
-                return colScale(d[plotDataField])
+                return colour_scales_dict["#shadingOptions"]  (d[plotDataField])
+            })
+            .style("fill-opacity", function(d){
+                 if (d3.select("#shadingOptions").node().value == "none") {
+                    return 0.1
+                 } else {
+                    return 0.7
+                 }
+            })
+            .style("stroke-opacity", function(d){
+                 if (d3.select("#shadingOptions").node().value == "none") {
+                    return 0.1
+                 } else {
+                    return 0.7
+                 }
             })
             .on('mouseover', update_hover_panel)
             .classed("selected", function(d) {
@@ -342,9 +388,40 @@ function voronoi_map(map,uk_clip_data, csvdata) {
                 return "translate(" + d.x + "," + d.y + ")";
             })
             .style('fill', function(d) {
-                return "#000"
+
+                var metric = d3.select("#pointShadingOptions").node().value 
+                if (metric == "none") {
+                    return "#000"
+                 } else {
+                    return colour_scales_dict["#pointShadingOptions"](d[metric])
+                 }
             })
-            .attr("r", 2);
+            .attr("r", function(d) {
+
+                var metric = d3.select("#pointSizeOptions").node().value 
+                if (metric == "none") {
+                    var pointsize = d3.select("#shadingOptions").node().value 
+                    if (pointsize == "none") {
+                        return 4
+                     } else {
+                        return 2
+                     }
+                 } else {
+                    return colour_scales_dict["#pointSizeOptions"](d[metric])
+                 }
+
+            })
+            .attr("fill-opacity", function(d) {
+
+                var metric = d3.select("#pointSizeOptions").node().value 
+                if (metric == "none") {
+                    return 1
+                 } else {
+                    return 0.4
+                 }
+
+            })
+            ;
 
         vor_points.append("text")
             .attr("class", "place-label")

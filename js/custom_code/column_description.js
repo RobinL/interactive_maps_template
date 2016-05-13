@@ -12,7 +12,10 @@ column_descriptions_data = {
         "format": d3.format(",.1%"),
         "domain": [0,0.5,1]  //If you want to explicitly set the domain you can use this
     },
-
+    "none": {
+        "long_name": "None",
+        "format": d3.format(",.1%")
+    }
 }
 
 var colourOptions = {
