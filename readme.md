@@ -1,0 +1,1 @@
+A generic template for creating interactive maps from a simple csv
