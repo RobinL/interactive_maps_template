@@ -1,7 +1,7 @@
 L.mapbox.accessToken = 'pk.eyJ1Ijoicm9iaW5saW5hY3JlIiwiYSI6IjAwYTg3MDAwNmFlZTk3MDlhNGIxY2VjNDk5Yjk4NWE1In0.DWAN8Om-9kOnwVTQIiDGaw';
-    map = L.mapbox.map('map', 'mapbox.light')
-    map.setView([53,0],7)
-    url = '';
+map = L.mapbox.map('map', 'mapbox.light');
+map.setView([53,0],7);
+url = '';
 
 // These deferreds are used when we have a proper web server.
 // var p1 = $.ajax("data/uk.json")
@@ -23,11 +23,9 @@ map.on('ready', function(d) {p3.resolve( "hurray" )})
 
 
 $.when(p3).done(function(x) {
-    
     var uk_clip_data = uk
     var points_data = points
     voronoi_map(map, uk_clip_data, points_data)
-
 })
 
 function voronoi_map(map,uk_clip_data, csvdata) {
@@ -63,9 +61,9 @@ function voronoi_map(map,uk_clip_data, csvdata) {
 
         var template_dict = {
             name: point.name,
-            metric_1: format(point.metric_1),
-            metric_2: format(point.metric_2),
-            metric_3: format(point.metric_3),
+            metric_1: point.metric_1,
+            metric_2: point.metric_2,
+            metric_3: point.metric_3,
 
         };
 
@@ -157,12 +155,11 @@ function voronoi_map(map,uk_clip_data, csvdata) {
 
 
     var getListOfMetrics = function() {
-
-        var keys = _.filter(_.keys(points[0]), function(d) {
-            return !_.contains(["name","lng", "lat"], d)
+        var fields = _.filter(column_descriptions_data, function(d) {
+            return d["manually_included"]
         })
-
-        return keys
+        var list =  _.map(fields, function(d) {return d.key})
+        return list
     }
 
 
@@ -476,8 +473,11 @@ function voronoi_map(map,uk_clip_data, csvdata) {
 
   
     listOfMetrics = getListOfMetrics(points)
+
     drawMetricSelection();
     drawColourSelection();
     setColourScale();
     map.addLayer(mapLayer);
 }
+
+
