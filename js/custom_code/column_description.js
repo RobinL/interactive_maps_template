@@ -3,7 +3,7 @@ column_descriptions_data = {
         "long_name": "My metric 1",
         "format": d3.format(",.1%")
     },
-    "metric_2": {},
+    "metric_4": {},
     "metric 5": {
         "long_name": "My metric 5"
     },
@@ -46,8 +46,10 @@ function process_column_descriptions() {
 
     })
 
-    column_descriptions_data["none"] = {"manually_included" : false,
-                                        "long_name": "None"}
+    column_descriptions_data["none"] = {
+        "manually_included": false,
+        "long_name": "None"
+    }
 
 
     // If they don't have a long name, overwrite with the key
@@ -60,6 +62,9 @@ function process_column_descriptions() {
     _.each(column_descriptions_data, function(d, k) {
         if (!(_.has(d, "colour_option"))) {
             d["colour_option"] = _.keys(colourOptions)[0]
+            d["colour_option_manually_set"] = false
+        } else {
+            d["colour_option_manually_set"] = true
         }
     })
 
@@ -134,7 +139,7 @@ numerical_to_float()
 // Finally get rid of rows which don't have lat lng
 
 function filter_out_invalid_coordinates() {
-    points = _.filter(points, function(d){
+    points = _.filter(points, function(d) {
         if (isNaN(d["lat"])) {
             return false
         }
@@ -149,11 +154,11 @@ function filter_out_invalid_coordinates() {
 
 filter_out_invalid_coordinates()
 
-var colours = ["#777","#dc3912","#ff9900","#0E8917","#990099","#0099c6","#dd4477","#A6FF3C","#FF3F42","#1C3C5D","#D860DA"];
-        
+var colours = ["#777", "#dc3912", "#ff9900", "#0E8917", "#990099", "#0099c6", "#dd4477", "#A6FF3C", "#FF3F42", "#1C3C5D", "#D860DA"];
+
 function set_domains() {
 
-    _.each(column_descriptions_data, function(d1,k1) {
+    _.each(column_descriptions_data, function(d1, k1) {
 
         // For each columns, set the domain
 
@@ -177,12 +182,11 @@ function set_domains() {
         // If numeric, get min max
 
         if (!(d1["is_categorical"])) {
-            
+
             var all_values = _.map(points, function(d) {
                 return d[k1]
             });
 
-            
             var minMetric = Math.min.apply(null, all_values);
             var maxMetric = Math.max.apply(null, all_values);
 
@@ -195,25 +199,51 @@ function set_domains() {
             var num_colours = c_options.length
             var diff = maxMetric - minMetric
 
-            domain = d3.range(minMetric, maxMetric+diff/100, diff/(c_options.length -1))
+            domain = d3.range(minMetric, maxMetric + diff / 100, diff / (c_options.length - 1))
 
             d1["colour_scale"] = d3.scale.linear()
-                . domain(domain)
+                .domain(domain)
                 .range(c_options);
 
             d1["domain"] = [minMetric, maxMetric]
 
         }
 
-     
 
     })
-     
+
 
 }
 
 set_domains()
 
 
-// d3.scale.ordinal().domain(["a","b","c","d"]).range(["a","b"])
+function update_colour_scales() {
 
+    var colourScaleOption = d3.select("#colourOptions").node().value
+    var colour_scale = colourOptions[colourScaleOption]
+
+    // Iterate through the column_descriptions_data updating the colour scale
+
+    _.each(column_descriptions_data, function(d, k) {
+
+        if (d["colour_option_manually_set"] == false) {
+
+            if (!(d["is_categorical"])) {
+
+                var min_ = d["domain"][0];
+                var max_ = d["domain"][1];
+
+                var diff = max_ - min_;
+                var domain = d3.range(min_, max_ + diff / 100, diff / (colour_scale.length - 1));
+
+                d["colour_scale"] = d3.scale.linear().domain(domain).range(colour_scale)
+            }
+        }
+
+
+    })
+
+}
+
+// d3.scale.ordinal().domain(["a","b","c","d"]).range(["a","b"])
