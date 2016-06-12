@@ -53,16 +53,35 @@ var colours = ["#777", "#dc3912", "#ff9900", "#0E8917", "#990099", "#0099c6", "#
 
 function DataHolder(column_descriptions_data, colour_options, points) {
 
-    
-    this.points = points;
+    this.all_points = points.slice();
     this.column_descriptions_data = column_descriptions_data;
     this.colour_options = colour_options;
+
+    this.filter_points = function() {
+        // Field to filter on
+        var filter_field = d3.select("#filter_records_field").node().value;
+
+        // Filter regex
+        var filter_text = d3.select("#filter_records_text").node().value;
+
+        this.points = _.filter(this.all_points, function(d) {
+            if (filter_field == "none") {
+                return true
+            }
+
+            var re = new RegExp(filter_text)
+
+            var match = re.test(d[filter_field])
+            return match
+        })
+
+    }
 
     // Idea will be to inc
     this.process_column_descriptions = function() {
 
         // Add any keys which are in the data but aren't in column_descriptions_data
-        _.each(this.points[0], function(d, k) {
+        _.each(this.all_points[0], function(d, k) {
             if (!(_.has(this.column_descriptions_data, k))) {
                 this.column_descriptions_data[k] = {
                     "manually_included": false
@@ -105,10 +124,11 @@ function DataHolder(column_descriptions_data, colour_options, points) {
 
         // Detect whether variables are categorical or continuous
         // Iterate through the columns which will be part of this vis
+        var all_points = this.all_points
         _.each(this.column_descriptions_data, function(d, k) {
             if (!(_.has(d, "is_categorical"))) {
                 // Look through data - if we can parsefloat every value then we call it numeric otherwise categorical
-                var categorical = _.some(this.points, function(d2) {
+                var categorical = _.some(all_points, function(d2) {
                     this_value = d2[k];
 
                     if (this_value !== "") {
@@ -154,7 +174,7 @@ function DataHolder(column_descriptions_data, colour_options, points) {
 
     this.numerical_to_float = function() {
 
-        _.each(this.points, function(d) {
+        _.each(this.all_points, function(d) {
             _.each(this.column_descriptions_data, function(d2, k2) {
                 if (!(d2["is_categorical"])) {
                     d[k2] = parseFloat(d[k2])
@@ -165,7 +185,7 @@ function DataHolder(column_descriptions_data, colour_options, points) {
 
     //  Get rid of rows which don't have lat lng
     this.filter_out_invalid_coordinates = function() {
-        this.points = _.filter(this.points, function(d) {
+        this.all_points = _.filter(this.all_points, function(d) {
             if (isNaN(d["lat"])) {
                 return false
             }
@@ -177,6 +197,7 @@ function DataHolder(column_descriptions_data, colour_options, points) {
     }
 
     this.set_domains = function() {
+        var all_points = this.all_points
 
         _.each(this.column_descriptions_data, function(d1, k1) {
 
@@ -186,7 +207,7 @@ function DataHolder(column_descriptions_data, colour_options, points) {
 
             if (d1["is_categorical"]) {
 
-                var uniques = _.uniq(this.points, function(item, key) {
+                var uniques = _.uniq(all_points, function(item, key) {
                     a = item[k1]
                     return item[k1]
                 })
@@ -205,7 +226,7 @@ function DataHolder(column_descriptions_data, colour_options, points) {
 
             if (!(d1["is_categorical"])) {
 
-                var all_values = _.map(this.points, function(d) {
+                var all_values = _.map(all_points, function(d) {
                     return d[k1]
                 });
 

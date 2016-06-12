@@ -33,8 +33,9 @@ $.when(p3).done(function(x) {
     data_holder.set_domains()
     data_holder.filter_out_invalid_coordinates()
 
+
     var uk_clip_data = uk
-    var points_data = points
+    // var points_data = points
     voronoi_map(map, uk_clip_data, data_holder)
 })
 
@@ -253,6 +254,30 @@ function voronoi_map(map, uk_clip_data, data_holder) {
 
         })
 
+        // Populate 
+        var all_metrics = data_holder.column_descriptions_data
+        d3.select("#filter_records_field").selectAll('option')
+            .data(_.map(data_holder.column_descriptions_data, function(d,k) {return d}))
+            .enter()
+            .append("option")
+            .attr("value", function(d) {
+                return d.key;
+            })
+            .text(function(d) {
+                return d.long_name
+            })
+
+        $("#filter_records_field").val("none");
+        d3.select("#filter_records_field").on("change", function(d) {
+                drawWithLoading()
+            })
+        d3.select("#filter_records_text").on("change", function(d) {
+                drawWithLoading()
+            })
+
+
+
+
         // First option
         $("#shadingOptions").val(listOfMetrics[0]);
         $("#keyOptions").val(listOfMetrics[0]);
@@ -299,6 +324,8 @@ function voronoi_map(map, uk_clip_data, data_holder) {
     }
 
     var draw = function() {
+
+        data_holder.filter_points()
 
         d3.select('#overlay').remove();
         d3.select('#map_key').remove();
