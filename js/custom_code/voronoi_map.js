@@ -26,26 +26,27 @@ map.on('ready', function(d) {
 
 $.when(p3).done(function(x) {
 
-    process_column_descriptions(points)
-    points = numerical_to_float(points)
-    set_domains(points)
-    points = filter_out_invalid_coordinates(points)
+    data_holder = new DataHolder(column_descriptions_data, colour_options, points)
+
+    data_holder.process_column_descriptions()
+    data_holder.numerical_to_float()
+    data_holder.set_domains()
+    data_holder.filter_out_invalid_coordinates()
 
     var uk_clip_data = uk
     var points_data = points
-    voronoi_map(map, uk_clip_data, points_data)
+    voronoi_map(map, uk_clip_data, data_holder)
 })
 
-function voronoi_map(map, uk_clip_data, csvdata) {
+function voronoi_map(map, uk_clip_data, data_holder) {
 
 
-    var points = csvdata, //Stores all the points for the current metrics
-        filteredPoints = [], //Stores the points within the current map bounds (at current zoom level)
+    var filteredPoints = [], //Stores the points within the current map bounds (at current zoom level)
         uk = uk_clip_data, //Stores data for clipping mask
         listOfMetrics, //Store the different metrics (metric_1, metric_2 etc)
         lastSelectedPoint, //So the tooltip 'remembers' where we were when we leave the map area
-        plotDataField, //Which metric?
-        colour_scales_dict = {};
+        plotDataField //Which metric?
+        // colour_scales_dict = {};
 
 
     var voronoi = d3.geom.voronoi()
@@ -67,7 +68,7 @@ function voronoi_map(map, uk_clip_data, csvdata) {
 
 
         var template_dict = {}
-        _.each(column_descriptions_data, function(d,k) {
+        _.each(data_holder.column_descriptions_data, function(d,k) {
             template_dict[k] = d["format"](point[k])
         })
 
@@ -82,7 +83,7 @@ function voronoi_map(map, uk_clip_data, csvdata) {
 
     var draw_map_key_categorical = function() {
 
-        var scale = column_descriptions_data[$("#keyOptions").val()]["colour_scale"]
+        var scale = data_holder.column_descriptions_data[$("#keyOptions").val()]["colour_scale"]
 
         var key_position_top = 200;
         var key_position_left = 70;
@@ -153,7 +154,7 @@ function voronoi_map(map, uk_clip_data, csvdata) {
         var num_steps = 50;
 
 
-        var map_colour_scale = column_descriptions_data[$("#keyOptions").val()]["colour_scale"];
+        var map_colour_scale = data_holder.column_descriptions_data[$("#keyOptions").val()]["colour_scale"];
 
 
         var num_cats = map_colour_scale.domain().length
@@ -196,9 +197,8 @@ function voronoi_map(map, uk_clip_data, csvdata) {
             .orient("left")
             .ticks(10, ",0.2s")
             .tickSize(-10, 0)
-            .tickFormat(column_descriptions_data[$("#keyOptions").val()]["format"])
+            .tickFormat(data_holder.column_descriptions_data[$("#keyOptions").val()]["format"])
 
-        debugger
 
         svg.append("g")
             .attr("transform", "translate(" + key_position_left + "," + key_position_top + ")")
@@ -209,7 +209,7 @@ function voronoi_map(map, uk_clip_data, csvdata) {
             .attr("transform", "translate(90," + key_position_top + ") rotate(90)")
             .append("text")
             .text(function(d) {
-                return column_descriptions_data[$("#keyOptions").val()]["long_name"]
+                return data_holder.column_descriptions_data[$("#keyOptions").val()]["long_name"]
             })
             .style("font-weight", "bold")
             .style("font-size", "12px")
@@ -223,7 +223,7 @@ function voronoi_map(map, uk_clip_data, csvdata) {
 
 
     var getListOfMetrics = function() {
-        var fields = _.filter(column_descriptions_data, function(d) {
+        var fields = _.filter(data_holder.column_descriptions_data, function(d) {
             return d["manually_included"]
         })
         var list = _.map(fields, function(d) {
@@ -244,7 +244,7 @@ function voronoi_map(map, uk_clip_data, csvdata) {
                     return d
                 })
                 .text(function(d) {
-                    return column_descriptions_data[d].long_name
+                    return data_holder.column_descriptions_data[d].long_name
                 })
 
             d3.select(selector).on("change", function(d) {
@@ -261,7 +261,8 @@ function voronoi_map(map, uk_clip_data, csvdata) {
 
     var drawColourSelection = function() {
 
-        var data = _.keys(colourOptions)
+        var data = _.keys(data_holder.colour_options)
+
         d3.select("#colourOptions").selectAll('option')
             .data(data)
             .enter()
@@ -313,7 +314,7 @@ function voronoi_map(map, uk_clip_data, csvdata) {
             existing = d3.set(),
             drawLimit = bounds.pad(0.4);
 
-        filteredPoints = points.filter(function(d) {
+        filteredPoints = data_holder.points.filter(function(d) {
             var latlng = new L.LatLng(d.lat, d.lng);
 
             if (!drawLimit.contains(latlng)) {
@@ -335,7 +336,7 @@ function voronoi_map(map, uk_clip_data, csvdata) {
         });
 
 
-        update_colour_scales();
+        data_holder.update_colour_scales();
 
         var svg = d3.select(map.getPanes().overlayPane).append("svg")
 
@@ -374,7 +375,7 @@ function voronoi_map(map, uk_clip_data, csvdata) {
             .attr("d", buildPathFromPoint)
             .style("fill", function(d) {
                 field = d3.select("#shadingOptions").node().value
-                return column_descriptions_data[plotDataField]["colour_scale"](d[plotDataField])
+                return data_holder.column_descriptions_data[plotDataField]["colour_scale"](d[plotDataField])
             })
             .style("fill-opacity", function(d) {
                 if (d3.select("#shadingOptions").node().value == "none") {
@@ -413,7 +414,7 @@ function voronoi_map(map, uk_clip_data, csvdata) {
                 if (metric == "none") {
                     return "#000"
                 } else {
-                    return column_descriptions_data[metric]["colour_scale"](d[metric])
+                    return data_holder.column_descriptions_data[metric]["colour_scale"](d[metric])
                 }
             })
             .attr("r", function(d) {
@@ -428,7 +429,7 @@ function voronoi_map(map, uk_clip_data, csvdata) {
                         return 2
                     }
                 } else {
-                    var this_domain = column_descriptions_data[metric]["domain"]
+                    var this_domain = data_holder.column_descriptions_data[metric]["domain"]
                     var this_range = [1, 8]
                     var this_scale = d3.scale.linear().domain(this_domain).range(this_range)
                     return this_scale(d[metric])
@@ -447,7 +448,7 @@ function voronoi_map(map, uk_clip_data, csvdata) {
             });
 
 
-        if  ( column_descriptions_data[$("#keyOptions").val()]["is_categorical"]) {
+        if  ( data_holder.column_descriptions_data[$("#keyOptions").val()]["is_categorical"]) {
             draw_map_key_categorical()
             } else {
             draw_map_key_continuous()
@@ -488,10 +489,10 @@ function voronoi_map(map, uk_clip_data, csvdata) {
     };
 
 
-    listOfMetrics = getListOfMetrics(points)
+    listOfMetrics = getListOfMetrics()
 
     drawMetricSelection();
     drawColourSelection();
-    update_colour_scales();
+    data_holder.update_colour_scales();
     map.addLayer(mapLayer);
 }
