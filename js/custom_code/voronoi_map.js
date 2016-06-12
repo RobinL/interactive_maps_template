@@ -25,6 +25,12 @@ map.on('ready', function(d) {
 
 
 $.when(p3).done(function(x) {
+
+    process_column_descriptions(points)
+    points = numerical_to_float(points)
+    set_domains(points)
+    points = filter_out_invalid_coordinates(points)
+
     var uk_clip_data = uk
     var points_data = points
     voronoi_map(map, uk_clip_data, points_data)
@@ -59,15 +65,11 @@ function voronoi_map(map, uk_clip_data, csvdata) {
         lastSelectedPoint = point;
         cell.classed('selected', true);
 
-        var format = column_descriptions_data[$("#shadingOptions").val()]["format"]
 
-        var template_dict = {
-            name: point.name,
-            metric_1: point.metric_1,
-            metric_2: point.metric_2,
-            metric_3: point.metric_3,
-
-        };
+        var template_dict = {}
+        _.each(column_descriptions_data, function(d,k) {
+            template_dict[k] = d["format"](point[k])
+        })
 
         var source = $("#view_location_info").html();
         var template = Handlebars.compile(source);

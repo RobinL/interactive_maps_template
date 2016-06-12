@@ -3,6 +3,14 @@ column_descriptions_data = {
         "long_name": "My metric 1",
         "format": d3.format(",.1%")
     },
+    "metric_2": {
+        "long_name": "My metric 2",
+        "format": d3.format(",.1%"),
+        "domain": [0,0.5,0.75,1],
+        "colour_option": "Red (high) to green (low) four"
+
+
+    },
     "metric_4": {},
     "metric 5": {
         "long_name": "My metric 5"
@@ -17,6 +25,7 @@ var colourOptions = {
     "Greens": ["#3AFF17", "#00660F", "#000000"],
     "Greys": ["#D2EAEE", "#738F95", "#2B333C"],
     "Red and blue": ["#810303", "#542460", "#177CF7"],
+    "Red (high) to green (low) four": ["#6AE817", "#FFD52D", "#B30409", "#021303"],
 };
 
 
@@ -31,8 +40,13 @@ var colourOptions = {
 //     }
 
 
+function DataHolder(column_descriptions_data, points) {
+
+
+}
+
 // Idea will be to inc
-function process_column_descriptions() {
+function process_column_descriptions(points) {
 
     // Add any keys which are in the data but aren't in column_descriptions_data
     _.each(points[0], function(d, k) {
@@ -46,6 +60,7 @@ function process_column_descriptions() {
 
     })
 
+    // Add an entry for 'none', which will be used by select boxes etc for a null column selection
     column_descriptions_data["none"] = {
         "manually_included": false,
         "long_name": "None"
@@ -59,6 +74,7 @@ function process_column_descriptions() {
         }
     });
 
+    // Set default colour option to first in the list unless manually specified
     _.each(column_descriptions_data, function(d, k) {
         if (!(_.has(d, "colour_option"))) {
             d["colour_option"] = _.keys(colourOptions)[0]
@@ -68,6 +84,7 @@ function process_column_descriptions() {
         }
     })
 
+    // Hold the key in the dict for easy access later
     _.each(column_descriptions_data, function(d, k) {
         d["key"] = k
     })
@@ -78,25 +95,24 @@ function process_column_descriptions() {
     _.each(column_descriptions_data, function(d, k) {
         if (!(_.has(d, "is_categorical"))) {
             // Look through data - if we can parsefloat every value then we call it numeric otherwise categorical
-            var numeric = _.some(points, function(d2) {
+            var categorical = _.some(points, function(d2) {
                 this_value = d2[k];
 
                 if (this_value !== "") {
                     var pf = parseFloat(this_value)
 
                     if (isNaN(pf)) {
-                        return false
+                        return true
                     }
                 }
-                return true
+                return false
 
             })
-            column_descriptions_data[k]["is_categorical"] = !numeric
+            column_descriptions_data[k]["is_categorical"] = categorical
         }
-    })
+    });
 
     // Set format if not exists
-    // If they don't have a long name, overwrite with the key
     _.each(column_descriptions_data, function(d, k) {
         if (!(_.has(d, "format"))) {
             if (d["is_categorical"]) {
@@ -111,18 +127,18 @@ function process_column_descriptions() {
     })
 
 
-
-
+    // Detect whether domain has been set manually. 
+    _.each(column_descriptions_data, function(d, k) {
+        if (!(_.has(d, "domain"))) {
+            d["domain_manually_set"] = false
+        } else {
+            d["domain_manually_set"] = true
+        }
+    });
 
 }
 
-
-
-process_column_descriptions()
-
-
-
-function numerical_to_float() {
+function numerical_to_float(points) {
 
     _.each(points, function(d) {
         _.each(column_descriptions_data, function(d2, k2) {
@@ -131,14 +147,12 @@ function numerical_to_float() {
             }
         })
     })
-
+    return points
 }
 
-numerical_to_float()
 
-// Finally get rid of rows which don't have lat lng
-
-function filter_out_invalid_coordinates() {
+//  Get rid of rows which don't have lat lng
+function filter_out_invalid_coordinates(points) {
     points = _.filter(points, function(d) {
         if (isNaN(d["lat"])) {
             return false
@@ -147,16 +161,14 @@ function filter_out_invalid_coordinates() {
             return false
         }
         return true
-
-
     })
+    return points
 }
-
-filter_out_invalid_coordinates()
 
 var colours = ["#777", "#dc3912", "#ff9900", "#0E8917", "#990099", "#0099c6", "#dd4477", "#A6FF3C", "#FF3F42", "#1C3C5D", "#D860DA"];
 
-function set_domains() {
+// Where domains haven't been set manually, set them
+function set_domains(points) {
 
     _.each(column_descriptions_data, function(d1, k1) {
 
@@ -175,8 +187,10 @@ function set_domains() {
                 return d[k1]
             })
 
-            d1["domain"] = uniques
-            d1["colour_scale"] = d3.scale.ordinal().domain(uniques).range(colours)
+            if (!(d1["domain_manually_set"])) {
+                d1["domain"] = uniques
+            }
+            d1["colour_scale"] = d3.scale.ordinal().domain(d1["domain"]).range(colours)
         }
 
         // If numeric, get min max
@@ -201,24 +215,23 @@ function set_domains() {
 
             domain = d3.range(minMetric, maxMetric + diff / 100, diff / (c_options.length - 1))
 
+            if (!(d1["domain_manually_set"])) {
+                d1["domain"] = domain
+            }
+
             d1["colour_scale"] = d3.scale.linear()
-                .domain(domain)
+                .domain(d1["domain"])
                 .range(c_options);
 
-            d1["domain"] = [minMetric, maxMetric]
+            d1["minmax"] = [minMetric, maxMetric]
 
         }
 
 
     })
-
-
 }
 
-set_domains()
-
-
-function update_colour_scales() {
+function update_colour_scales(points) {
 
     var colourScaleOption = d3.select("#colourOptions").node().value
     var colour_scale = colourOptions[colourScaleOption]
@@ -231,13 +244,17 @@ function update_colour_scales() {
 
             if (!(d["is_categorical"])) {
 
-                var min_ = d["domain"][0];
-                var max_ = d["domain"][1];
+                var min_ = d["minmax"][0];
+                var max_ = d["minmax"][1];
 
                 var diff = max_ - min_;
                 var domain = d3.range(min_, max_ + diff / 100, diff / (colour_scale.length - 1));
 
-                d["colour_scale"] = d3.scale.linear().domain(domain).range(colour_scale)
+                if (!(d["domain_manually_set"])) {
+                    d["domain"] = domain
+                }
+
+                d["colour_scale"] = d3.scale.linear().domain(d["domain"]).range(colour_scale)
             }
         }
 
@@ -246,4 +263,3 @@ function update_colour_scales() {
 
 }
 
-// d3.scale.ordinal().domain(["a","b","c","d"]).range(["a","b"])
