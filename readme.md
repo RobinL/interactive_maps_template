@@ -1,6 +1,8 @@
 A generic template for creating interactive maps from a simple csv.
 
-To modify for your purposes, you just need to change the following file:
+You can access a demo, which uses a random dataset, [here](http://robinl.github.io/interactive_maps_template/):  
+
+To modify for your purposes, you need to change the following file:
 
 https://github.com/RobinL/interactive_maps_template/blob/master/data/data_template.csv
 
@@ -8,9 +10,9 @@ and change the config file so that it aligns with your column names
 
 https://github.com/RobinL/interactive_maps_template/blob/master/js/custom_code/column_description.js (edited)
 
-and it should ‘just work'
+and it should  work.
 
-Current code is  set up to run from a shared drive (i.e. without ajax), so you have to convert the csv into json, like this: https://github.com/RobinL/interactive_maps_template/blob/master/data/csv_data.js 
+Current code is set up to run from a shared drive (i.e. without ajax), so you have to convert the csv into json, like this: https://github.com/RobinL/interactive_maps_template/blob/master/data/csv_data.js 
 
 But there’s some code in the main scripts you can uncomment out and make it work from the csv instead if you have a proper web server:
 
