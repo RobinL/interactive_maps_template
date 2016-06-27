@@ -1,6 +1,11 @@
 A generic template for creating interactive maps from a simple csv.
 
+### Demo
+
 You can access a demo, which uses a random dataset, [here](http://robinl.github.io/interactive_maps_template/):  
+
+
+### Instructions
 
 To modify for your purposes, you need to change the following file:
 
