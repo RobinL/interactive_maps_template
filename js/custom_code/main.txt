@@ -1,6 +1,12 @@
 var p1 = $.ajax(VMT.shapefile_path)
 var p2 = $.ajax(VMT.csv_path)
 
+// To enable this to be shared on the shared drives, comment out the above two lines, and uncomment the following:
+
+// var p3 = jQuery.Deferred();
+// p3.resolve("hurray")
+// $.when(p3).done(function() { topo_data = [topo_data]
+
 $.when(p1,p2).done(function(topo_data, csv_data) {
 
   //Convert topo_json to geojson
@@ -11,7 +17,7 @@ $.when(p1,p2).done(function(topo_data, csv_data) {
   geo_collection.features = [geo_collection.features[0], geo_collection.features[4], geo_collection.features[3]]   
   VMT.geo_collection = geo_collection
 
-  //Parse the csv data
+  //Parse the csv data  (remove this line if loading from shared drive)
   var csv_data = d3.csv.parse(csv_data[0])
 
   //Add the csv data to the data manager 
@@ -43,10 +49,17 @@ $.when(p1,p2).done(function(topo_data, csv_data) {
     VMT.voronoimap.draw_from_scratch()
   })
 
-  $("#shadingOptions, #pointSizeOptions, #pointShadingOptions, #colourOptions").on("change", function(d) {
-
+  $("#shadingOptions,  #pointShadingOptions").on("change", function(d) {
+    $("#keyOptions").val(this.value)
     VMT.voronoimap.style_overlay()
   })
+
+  $("#colourOptions, #keyOptions, #pointSizeOptions").on("change", function(d) {
+    VMT.dataholder.update_colour_scales()
+    VMT.voronoimap.style_overlay()
+  })
+
+
 
   d3.select("#plus_dates").on("click", function(d) {
 

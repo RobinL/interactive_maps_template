@@ -24,6 +24,10 @@ function VoronoiMap() {
         va.select("path")
             .transition()
             .duration(VMT.transitionDuration)
+            .delay(function(d) {
+                if (VMT.transitionDuration==0) {return 0}
+                return (d.x + d.y)/3
+            })
             .style("fill", function(d) {
                 return VMT.column_descriptions_data[shading_options_metric]["colour_scale"](d[shading_options_metric])
             })
@@ -43,12 +47,15 @@ function VoronoiMap() {
             })
 
 
-
         va.select("circle")
             .attr("cy",function(d) {return d.y})
             .attr("cx",function(d) {return d.x})
             .transition()
             .duration(VMT.transitionDuration)
+            .delay(function(d) {
+                if (VMT.transitionDuration==0) {return 0}
+                return (d.x + d.y)/3
+            })
             .style('fill', function(d) {
                 var this_value = d[point_shading_options_metric];
 
@@ -87,6 +94,13 @@ function VoronoiMap() {
                     return 0.6
                 }
             });
+
+        d3.select('#map_key').remove();
+        if  (VMT.column_descriptions_data[$("#keyOptions").val()]["is_categorical"]) {
+            draw_map_key_categorical()
+            } else {
+            draw_map_key_continuous()
+        };
 
     }
 
@@ -144,10 +158,10 @@ function VoronoiMap() {
         //This is the function that defines the layout
         var voronoi = d3.geom.voronoi()
             .x(function(d) {
-                return d.x;
+                return d.x + Math.random()-0.5;  //To avoid two points being at the same pixel values and therefore having an uncomputable voronoi
             })
             .y(function(d) {
-                return d.y;
+                return d.y + Math.random()-0.5;  //To avoid two points being at the same pixel values
             });
 
         //For each point in current points, add the voronoi array to the point (the array of points defining the cell)

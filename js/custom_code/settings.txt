@@ -63,4 +63,4 @@ VMT.filter_options = [{
     "text": "Metric 5"
 }]
 
-VMT.transitionDuration = 1000
+VMT.transitionDuration = 500
