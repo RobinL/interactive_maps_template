@@ -1,0 +1,300 @@
+//There are three styles:  
+// Shaded Voronoi polygons
+// Coloured points
+// Points of different sizes
+
+//But these are all really the same thing - you always plot the voronoi areas to
+//make the hover functionality work.  You just turn the shading off in some cases
+
+function VoronoiMap() {
+
+     //When the data changes we just need to redraw the overlay
+    //This function styles the points and the shaded area
+    this.style_overlay = function() {
+
+        if (!(VMT.global_key_scale)) {
+            VMT.dataholder.set_domains("current")
+            VMT.dataholder.update_colour_scales()
+        }
+
+        var shading_options_metric = d3.select("#shadingOptions").node().value
+        var point_shading_options_metric = d3.select("#pointShadingOptions").node().value
+        var point_size_options_metric = d3.select("#pointSizeOptions").node().value
+
+        var voronoi_areas = d3.selectAll(".voronoi_areas")
+
+        var va = voronoi_areas
+            .data(VMT.dataholder.current_points)
+            
+        va.select("path")
+            .transition()
+            .duration(VMT.transitionDuration)
+            .delay(function(d) {
+                if (VMT.transitionDuration==0) {return 0}
+                return (d.x + d.y)/3
+            })
+            .style("fill", function(d) {
+                return VMT.column_descriptions_data[shading_options_metric]["colour_scale"](d[shading_options_metric])
+            })
+            .style("fill-opacity", function(d) {
+
+                var this_value = d[shading_options_metric];
+
+                //If there is no value in the data, make it transparent.  
+                if (_.isNaN(this_value) || this_value == "") {return 0};
+
+                if (shading_options_metric == "none") {
+                    return 0
+                } else {
+                    return 0.7
+                }
+     
+            })
+
+
+        va.select("circle")
+            .attr("cy",function(d) {return d.y})
+            .attr("cx",function(d) {return d.x})
+            .transition()
+            .duration(VMT.transitionDuration)
+            .delay(function(d) {
+                if (VMT.transitionDuration==0) {return 0}
+                return (d.x + d.y)/3
+            })
+            .style('fill', function(d) {
+                var this_value = d[point_shading_options_metric];
+
+                if (_.isNaN(this_value) || this_value == "") {return "#fff"};
+
+                
+                if (point_shading_options_metric == "none") {
+                    return "#000"
+                } else {
+                    return VMT.column_descriptions_data[point_shading_options_metric]["colour_scale"](this_value)
+                }
+            })
+            .attr("r", function(d) {
+                if (isNaN(d[point_size_options_metric])) {return 2}
+                if (point_size_options_metric == "none") {
+                    var pointsize = d3.select("#shadingOptions").node().value
+                    if (pointsize == "none") {
+                        return 4
+                    } else {
+                        return 2
+                    }
+                } else {
+                    var this_domain = VMT.column_descriptions_data[point_size_options_metric]["domain"]
+                    var this_range = [2, 8]
+                    var this_scale = d3.scale.linear().domain(this_domain).range(this_range)
+                    return this_scale(d[point_size_options_metric])
+                }
+
+            })
+            .attr("fill-opacity", function(d) {
+                if (point_size_options_metric == "none") {
+                    return 1
+                } else {
+                    return 0.6
+                }
+            });
+
+        d3.select('#map_key').remove();
+        if  (VMT.column_descriptions_data[$("#keyOptions").val()]["is_categorical"]) {
+            draw_map_key_categorical()
+            } else {
+            draw_map_key_continuous()
+        };
+
+    }
+
+
+    //Remove overlay and redraw
+    this.draw_from_scratch = function() {
+
+        var vmttd = VMT.transitionDuration
+        VMT.transitionDuration = 0
+
+        d3.select("#v_map_overlay").remove()
+
+        var bounds = map.getBounds(),
+            topLeft = map.latLngToLayerPoint(bounds.getNorthWest()),
+            bottomRight = map.latLngToLayerPoint(bounds.getSouthEast())
+        
+        //Add an svg that sits on top of the leaflet map, which we draw the d3 svg elements to
+        var svg = d3.select(map.getPanes().overlayPane).append("svg")
+        svg.attr("id", "v_map_overlay")
+        me.svg = svg
+
+        //The SVG overlay needs to cover the whole of the map area
+        svg.style("width", map.getSize().x + 'px')
+                .style("height", map.getSize().y + 'px')
+                .style("margin-left", topLeft.x + "px")
+                .style("margin-top", topLeft.y + "px");;
+
+
+        var g = svg.append("g").attr("class", "leaflet-zoom-hide")
+
+
+
+       //Account for padding etc. to make sure the overlay is correctly placed
+       g.attr("transform", "translate(" + -topLeft.x + "," + -topLeft.y + ")");
+
+       //Filter points down to the currently selected date
+       VMT.dataholder.filter_points()
+
+
+       //Use leaflet's internal functions to convert the 
+       //points' lat lng into x y values corresponding to the leaflet map
+       VMT.dataholder.current_points = VMT.dataholder.current_points.map(function(d) {
+
+                var latlng = new L.LatLng(d.lat, d.lng);
+                var point = map.latLngToLayerPoint(latlng);
+
+                d.x = point.x;
+                d.y = point.y;
+
+                return d
+      
+            });
+
+        //The Voronoi layout associates a path with each point that represents the x,y of the voronoi cell
+        //This is the function that defines the layout
+        var voronoi = d3.geom.voronoi()
+            .x(function(d) {
+                return d.x + (Math.random()-0.5)*0.001;  //To avoid two points being at the same pixel values and therefore having an uncomputable voronoi
+            })
+            .y(function(d) {
+                return d.y + (Math.random()-0.5)*0.001;  //To avoid two points being at the same pixel values
+            });
+
+        //For each point in current points, add the voronoi array to the point (the array of points defining the cell)
+        //Put it in a property called cell
+        voronoi(VMT.dataholder.current_points).forEach(function(d) {
+                d.point.cell = d;
+            });
+
+
+        //Now our 'current points' contain all the information we need to draw the voronoi map
+        //For each filtered point, covert the lat lng into x y point in svg space
+        var voronoi_areas = g.selectAll(".voronoi_areas")
+                .data(VMT.dataholder.current_points)
+                .enter().append("g")
+                .attr("class", "voronoi_areas");
+
+        var buildPathFromPoint = function(point) {
+                return "M" + point.cell.join("L") + "Z";
+            }
+
+        voronoi_areas.append("path")
+            .attr("class", "point-cell")
+            .attr("d", buildPathFromPoint)
+            .on("mouseover", on_mouseover)
+            .on("mouseout", on_mouseout);
+
+        voronoi_areas.append("circle")
+        
+
+        //Finally we want to clip anything plotted by d3 to the shapefile of the UK
+
+
+        //Take the geojson stream and convert to the leaflet coordinate system
+        function projectPoint(x, y) {
+            var point = map.latLngToLayerPoint(new L.LatLng(y, x));
+            this.stream.point(point.x, point.y);
+        }
+
+        var transform = d3.geo.transform({
+            point: projectPoint
+        })
+
+        var path = d3.geo.path().projection(transform);
+
+        //Draw the clipping path and apply it
+        g.append("svg:clipPath")
+            .attr("id", "EWClipPath")
+            .append("svg:path")
+            .datum(VMT.geo_collection)
+            .attr("d", path);
+
+        g.attr("clip-path", "url(#EWClipPath)")
+
+        me.style_overlay()
+
+        //Reset back to original value
+        VMT.transitionDuration = vmttd
+
+    }
+
+    function on_mouseover(d){
+
+
+        // Update hover panel
+        var source = $("#hp_info").html();
+        var template = Handlebars.compile(source);
+
+        //For each in template dict, format if format exists
+        var template_dict = {}
+        _.each(d, function(k,v) {
+            if (VMT.column_descriptions_data[v]){
+                template_dict[v] = VMT.column_descriptions_data[v].format(d[v])
+            }
+        })
+
+        var html = template(template_dict);
+        d3.select('#hover_panel')
+            .html(html)
+
+        // Display time series charts.
+        var ts_data = VMT.dataholder.get_timeseries_data(d["geography_id"])
+        
+        //Plot all fields which are continuous data, are manually include, and are not the VMT.filterfield
+        var to_plot = []
+        _.each(VMT.column_descriptions_data, function(d) {
+            if ((!(d.is_categorical)) & (d.key!=VMT.filter_field)) {
+                to_plot.push(d.key)
+            }
+        })
+
+        to_plot = _.filter(to_plot, function(d) {
+            return !_.contains(["lat", "lng"], d)
+        })
+
+        d3.select("#hover_panel_charts").html("")
+
+        _.each(to_plot, function(d) {
+            holder = d3.select("#hover_panel_charts").append("div").attr("class","time_series_chart")
+            chart = new TimeSeriesChart(holder, d, ts_data)
+
+        })
+
+    }
+
+    function on_mouseout(d) {
+        // d3.select('#hover_panel')
+        //         .html("<h3>Hover over areas to display statistics</h3>")
+
+        // d3.select('#hover_panel_charts')
+        //         .html("<h3>Hover over areas to display statistics</h3>")
+
+    }
+
+    var me = this;
+
+    var geo_collection = geo_collection;
+
+    var map = new L.Map("map", {
+                        center: [52.53, -0.09],
+                        zoom: 7,
+                        errorTileUrl: 'error.png'
+                    })
+                    .addLayer(new L.TileLayer("https://tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png"));
+
+    VMT.map = map;
+
+    map.on('viewreset moveend', this.draw_from_scratch);
+
+    this.draw_from_scratch()
+
+   
+
+}
