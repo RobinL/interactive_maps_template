@@ -9,19 +9,15 @@ You can access a demo, which uses a random dataset, [here](http://robinl.github.
 
 To modify for your purposes, you need to change the following file:
 
-https://github.com/RobinL/interactive_maps_template/blob/master/data/data_template.csv
+https://github.com/RobinL/interactive_maps_template/blob/master/data/data_template_messy.csv
 
 and change the config file so that it aligns with your column names
 
-https://github.com/RobinL/interactive_maps_template/blob/master/js/custom_code/column_description.js (edited)
+https://github.com/RobinL/interactive_maps_template/blob/master/js/custom_code/settings.txt 
 
 and it should  work.
 
-Current code is set up to run from a shared drive (i.e. without ajax), so you have to convert the csv into json, like this: https://github.com/RobinL/interactive_maps_template/blob/master/data/csv_data.js 
 
-But there’s some code in the main scripts you can uncomment out and make it work from the csv instead if you have a proper web server:
-
-https://github.com/RobinL/interactive_maps_template/blob/master/js/custom_code/voronoi_map.js#L15
 
 Some pics:
 

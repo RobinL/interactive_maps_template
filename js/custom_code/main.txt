@@ -25,6 +25,9 @@ $.when(p1,p2).done(function(topo_data, csv_data) {
   var list_of_metrics = getListOfOptions();
   var metrics_options_data = metrics_to_options_data(list_of_metrics);
   draw_options_inc_non("#shadingOptions",metrics_options_data)
+
+  $("#shadingOptions").val(list_of_metrics[0])
+
   draw_options_inc_non("#pointShadingOptions",metrics_options_data)
   draw_options_inc_non("#pointSizeOptions",metrics_options_data)
   draw_options_inc_non("#pointSizeOptions",metrics_options_data)
