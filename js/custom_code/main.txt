@@ -24,7 +24,7 @@ $.when(p1,p2).done(function(topo_data, csv_data) {
   VMT.dataholder = new DataHolder(csv_data)
   VMT.dataholder.process_column_descriptions()
   VMT.dataholder.parse_columns()
-  VMT.dataholder.set_domains()  
+  VMT.dataholder.set_domains("all")  
   VMT.dataholder.filter_out_invalid_coordinates()
   
   //Draw options
@@ -55,7 +55,9 @@ $.when(p1,p2).done(function(topo_data, csv_data) {
   })
 
   $("#colourOptions, #keyOptions, #pointSizeOptions").on("change", function(d) {
-    VMT.dataholder.update_colour_scales()
+  
+   
+
     VMT.voronoimap.style_overlay()
   })
 

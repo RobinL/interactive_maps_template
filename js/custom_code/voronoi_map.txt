@@ -12,6 +12,11 @@ function VoronoiMap() {
     //This function styles the points and the shaded area
     this.style_overlay = function() {
 
+        if (!(VMT.global_key_scale)) {
+            VMT.dataholder.set_domains("current")
+            VMT.dataholder.update_colour_scales()
+        }
+
         var shading_options_metric = d3.select("#shadingOptions").node().value
         var point_shading_options_metric = d3.select("#pointShadingOptions").node().value
         var point_size_options_metric = d3.select("#pointSizeOptions").node().value
@@ -70,8 +75,6 @@ function VoronoiMap() {
             })
             .attr("r", function(d) {
                 if (isNaN(d[point_size_options_metric])) {return 2}
-                    return 2
-
                 if (point_size_options_metric == "none") {
                     var pointsize = d3.select("#shadingOptions").node().value
                     if (pointsize == "none") {
@@ -81,7 +84,7 @@ function VoronoiMap() {
                     }
                 } else {
                     var this_domain = VMT.column_descriptions_data[point_size_options_metric]["domain"]
-                    var this_range = [1, 8]
+                    var this_range = [2, 8]
                     var this_scale = d3.scale.linear().domain(this_domain).range(this_range)
                     return this_scale(d[point_size_options_metric])
                 }
@@ -158,10 +161,10 @@ function VoronoiMap() {
         //This is the function that defines the layout
         var voronoi = d3.geom.voronoi()
             .x(function(d) {
-                return d.x + Math.random()-0.5;  //To avoid two points being at the same pixel values and therefore having an uncomputable voronoi
+                return d.x + (Math.random()-0.5)*0.001;  //To avoid two points being at the same pixel values and therefore having an uncomputable voronoi
             })
             .y(function(d) {
-                return d.y + Math.random()-0.5;  //To avoid two points being at the same pixel values
+                return d.y + (Math.random()-0.5)*0.001;  //To avoid two points being at the same pixel values
             });
 
         //For each point in current points, add the voronoi array to the point (the array of points defining the cell)

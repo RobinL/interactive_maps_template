@@ -181,9 +181,16 @@ function DataHolder(csv_data) {
     })
     }
 
-    this.set_domains = function() {
-        var all_csv_data = this.all_csv_data
+    this.set_domains = function(data_type) {
 
+
+
+        if (data_type == "all") {
+            var all_csv_data = this.all_csv_data
+        }
+         else {
+            var all_csv_data = this.current_points
+        }
         _.each(VMT.column_descriptions_data, function(d1, k1) {
 
             // For each columns, set the domain

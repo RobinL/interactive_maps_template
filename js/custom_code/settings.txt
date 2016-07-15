@@ -64,3 +64,5 @@ VMT.filter_options = [{
 }]
 
 VMT.transitionDuration = 500
+//Do we update the key depending on the filtered data or all the data?
+VMT.global_key_scale = false
