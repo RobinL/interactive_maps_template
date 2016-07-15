@@ -1,0 +1,130 @@
+html,
+body {
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  font-family: 'Lato', sans-serif;
+  font-size: 10pt;
+}
+
+#map {
+  position:absolute;
+  top:0;
+  bottom:0;
+  width:100%;
+}
+
+.padded_options {
+  position:absolute;
+  left: 0;
+  right: 0;
+  margin-left: 50px;
+  margin-right:50px; 
+  background-color: #fff;
+  border-radius: 5px;
+  top:10px;
+}
+
+label {
+  display: block;
+}
+
+
+.flex_parent {
+  display: flex;
+  justify-content: space-between;
+  box-sizing: border-box;
+  flex-flow: row wrap;
+ }
+
+.flex_item {
+  
+   flex: 1 1 auto;
+   margin:5px;
+   padding: 5px; 
+   border: solid 1px #BCBCBC;
+   border-radius: 5px;
+
+}
+
+#hover_panel {
+  position:absolute;
+  background-color: #FFF;
+  border-radius: 5px;
+  padding: 8px 8px 0 8px;
+  bottom: 10px;
+  left: 10px;
+}
+
+#hover_panel_charts {
+  position:absolute;
+  background-color: #FFF;
+  border-radius: 5px;
+  padding: 8px 8px 0 8px;
+  bottom: 10px;
+  right: 10px;
+}
+
+label {
+  display:block;
+  font-weight: bold;
+}
+
+
+svg {
+  position: relative;
+}
+
+path {
+  fill-opacity: .8;
+  stroke: #fff;
+  stroke-width: .5px;
+}
+
+path:hover {
+  stroke-width: 2.5px;
+}
+
+path.no-data {
+  fill-opacity: .1;
+  stroke: #fff;
+  stroke-width: .5px;
+}
+
+path.no-data:hover {
+  stroke-width: 2.5px;
+}
+
+
+.time_series_chart {
+   font-size: 10px;
+}
+
+.time_series_chart .title {
+  font-weight: bold;
+  font-size: 15px;
+}
+
+.time_series_chart .axis path,
+.time_series_chart .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.time_series_chart>.x.axis path {
+  display: none;
+}
+
+.time_series_chart .line  {
+  fill: none;
+  stroke-width: 1.5px;
+  stroke: steelblue;
+}
+
+.time_series_chart svg {
+  border-bottom: 0.5px solid #B3B1AE
+
+}
+
+

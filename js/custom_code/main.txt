@@ -1,0 +1,244 @@
+var p1 = $.ajax(VMT.shapefile_path)
+var p2 = $.ajax(VMT.csv_path)
+
+$.when(p1,p2).done(function(topo_data, csv_data) {
+
+  //Convert topo_json to geojson
+  var geo_collection = topo_data[0]
+  var geo_collection = topojson.feature(geo_collection, geo_collection.objects.subunits)
+
+  //England, Wales and Scotland
+  geo_collection.features = [geo_collection.features[0], geo_collection.features[4], geo_collection.features[3]]   
+  VMT.geo_collection = geo_collection
+
+  //Parse the csv data
+  var csv_data = d3.csv.parse(csv_data[0])
+
+  //Add the csv data to the data manager 
+  VMT.dataholder = new DataHolder(csv_data)
+  VMT.dataholder.process_column_descriptions()
+  VMT.dataholder.parse_columns()
+  VMT.dataholder.set_domains()  
+  VMT.dataholder.filter_out_invalid_coordinates()
+  
+  //Draw options
+  var list_of_metrics = getListOfOptions();
+  var metrics_options_data = metrics_to_options_data(list_of_metrics);
+  draw_options_inc_non("#shadingOptions",metrics_options_data)
+  draw_options_inc_non("#pointShadingOptions",metrics_options_data)
+  draw_options_inc_non("#pointSizeOptions",metrics_options_data)
+  draw_options_inc_non("#pointSizeOptions",metrics_options_data)
+
+  draw_options("#keyOptions", metrics_options_data)
+
+  var colour_options_data = colour_options_to_options_data()
+  draw_options("#colourOptions",colour_options_data)
+
+  draw_options("#filter_records_date_field",period_to_options_data())
+
+  $("#filter_records_date_field").on("change", function(d) {
+    VMT.voronoimap.draw_from_scratch()
+  })
+
+  $("#shadingOptions, #pointSizeOptions, #pointShadingOptions, #colourOptions").on("change", function(d) {
+
+    VMT.voronoimap.style_overlay()
+  })
+
+  d3.select("#plus_dates").on("click", function(d) {
+
+        var current = $("#filter_records_date_field").val()
+        
+        var periods = VMT.period_options 
+      
+        var current_index = periods.indexOf(current)
+        var new_index = Math.min(current_index + 1, periods.length - 1)
+        var new_period = periods[new_index]
+
+        $("#filter_records_date_field").val(new_period).change();
+
+    });
+
+  d3.select("#minus_dates").on("click", function(d) {
+
+        var current = $("#filter_records_date_field").val()
+        var periods = VMT.period_options 
+
+        var current_index = periods.indexOf(current)
+        var new_index = Math.max(current_index - 1, 0)
+        var new_period = periods[new_index]
+
+        $("#filter_records_date_field").val(new_period).change();
+
+    })
+
+  d3.select("#new_fieldset_button").on("click", function() {
+            add_fieldset_html();
+        })
+
+  //Finally draw map
+  VMT.voronoimap = new VoronoiMap();
+
+
+});
+
+var getListOfOptions = function() {
+    
+    var fields = _.filter(VMT.column_descriptions_data, function(d) {
+        return d["manually_included"]
+    })
+
+    var list = _.map(fields, function(d) {
+        return d.key
+    })
+    
+    return list
+}
+
+function metrics_to_options_data(metrics)  {
+  return _.map(metrics, function(d) {
+    return {"value": d, "text": VMT.column_descriptions_data[d].long_name}
+  })
+}
+
+function colour_options_to_options_data() {
+  return _.map(VMT.colour_options, function(k,v) {
+    return {"value":v, "text":v}
+  })
+}
+
+function period_to_options_data() {
+
+  var format = VMT.column_descriptions_data[VMT.filter_field].format
+  var uniques = _.unique(VMT.dataholder.all_csv_data, function(d) {
+    
+    return format(d[VMT.filter_field]);
+  })
+
+  var uniques = _.map(uniques, function(d) {
+    return d[VMT.filter_field];
+  })
+
+  uniques = uniques.sort(function(a,b) { 
+    return a.getTime()-b.getTime()
+  })
+
+  var return_array =  _.map(uniques, function(d) {
+    return {"text": format(d), "value":format(d)}
+  })
+
+  VMT.period_options = _.map(uniques, format);
+
+  return return_array
+
+}
+
+
+
+function remove_fieldset_html(fs_num) {
+    d3.select("[fs_num='" + fs_num + "']").remove()
+    VMT.voronoimap.draw_from_scratch()
+
+}
+
+function add_fieldset_html() {
+
+        //Data should be the existing list of fieldsets.
+        var bounddata = d3.select("#fieldsetholder").selectAll("fieldset").data();
+
+        var new_num = Math.max(bounddata) + 1
+        bounddata.push(new_num)
+
+        var num_fieldsets = d3.select("#fieldsetholder").selectAll("fieldset")[0].length;
+        var data = d3.range(num_fieldsets + 1)
+
+        var fieldsets_enter = d3.select("#fieldsetholder").selectAll("fieldset").data(data).enter()
+            .append("fieldset")
+            .attr("fs_num", function(d) {
+                return d;
+            });
+
+        fieldssets_select = fieldsets_enter.append("select")
+            .attr("name", "filter_records_field")
+            .attr("class", "filter_records_categorical_field")
+            .on("change", function() {
+
+                // Get fs_num, look up in data and enter options into second field
+                var fs_num = d3.select(this.parentNode).attr("fs_num")
+
+                var this_col = $(this).val()
+
+                //Now need to populate second list box with correct values 
+                if (this_col == "none") {
+                  var unique_values = ""
+                }
+                  else {
+                    var unique_values = _.unique(_.map(VMT.dataholder.all_csv_data, function(d) {
+                        return d[this_col]
+                    }))
+
+                    unique_values = _.filter(unique_values, function(d) {
+                      return d != ""
+                    })
+
+                  }
+
+
+                var option_values_select_box = d3.select("[fs_num='" + fs_num + "']").select(".filter_records_categorical_value");
+
+                var option_selections = option_values_select_box.selectAll("option")
+                    .data(unique_values)
+
+
+                option_selections.enter().append("option")
+                    .attr("value", function(d) {
+                        return d
+                    })
+                    .text(function(d) {
+                        return d
+                    })
+
+                option_selections
+                    .attr("value", function(d) {
+                        return d
+                    })
+                    .text(function(d) {
+                        return d
+                    })
+
+                option_selections.exit().remove()
+
+                VMT.voronoimap.draw_from_scratch()
+
+            })
+
+        fieldssets_select.selectAll("select")
+            .data(VMT.filter_options)
+            .enter()
+            .append("option")
+            .attr("value", function(d) {
+                return d["column"]
+            })
+            .text(function(d) {
+                return d["text"]
+            })
+
+        fieldsets_enter.append("select")
+            .attr("name", "filter_records_field")
+            .attr("class", "filter_records_categorical_value")
+            .on("change", function() {
+                VMT.voronoimap.draw_from_scratch()
+            })
+
+        fieldsets_enter.append("button").text("-")
+            .on("click", function() {
+                var fs_num = d3.select(this.parentNode).attr("fs_num")
+                remove_fieldset_html(fs_num)
+            })
+
+    }
+
+
+
+
+      

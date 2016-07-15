@@ -2,115 +2,128 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <link href="css/base.css" rel="stylesheet"/>
-    <link href="css/mapbox.css" rel='stylesheet' />
+    
+        <link href="css/leaflet.css" rel="stylesheet"/>
+
+    <link href="css/style.css" rel="stylesheet"/>
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
   </head>
   <body>
+
     <div id='map'>
     </div>
-    <div id="padded-options">
-      <div id=flex-options-container>
-      </div>
-      <div id=flex-options-container>
+
+    <div class="padded_options">
+     
+      <div class=flex_parent>
         
         <div class="flex_item">
           <div id='metric' class='selections2'>
             <label for="shadingOptions">Metric for area shading:
-              </br>
-              <select name="shadingOptions" id="shadingOptions">
-              </select>
             </label>
+            <select name="shadingOptions" id="shadingOptions">
+              </select>
           </div>
         </div>
         
         <div class="flex_item">
           <div id='metric' class='selections2'>
             <label for="pointShadingOptions">Metric for point shading
-              </br>
+            </label>
+              
               <select name="pointShadingOptions" id="pointShadingOptions">
               </select>
-            </label>
           </div>
         </div>
-
-       
 
         <div class="flex_item">
           <div id='metric' class='selections2'>
             <label for="pointSizeOptions">Metric for point size
-              </br>
+            </label>
+              
               <select name="pointSizeOptions" id="pointSizeOptions">
               </select>
-            </label>
           </div>
         </div>
 
          <div class="flex_item">
           <div id='metric' class='selections2'>
             <label for="pointSizeOptions">Metric for key
-              </br>
+              
+            </label>
               <select name="keyOptions" id="keyOptions">
               </select>
-            </label>
           </div>
         </div>
 
         <div class="flex_item">
           <div id='colour' class='selections2'>
             <label for="colourOptions">Select colour scheme:
-              </br>
+              
+            </label>
               <select name="colourOptions" id="colourOptions">
               </select>
+          </div>
+        </div>
+      
+        <div class="flex_item">
+          <div id='filter_records' class='selections2'>
+            <label for="filter_records" id="fieldsetholder">Filter the record based on categories
+            <button id="new_fieldset_button">+</button>
             </label>
           </div>
         </div>
 
         <div class="flex_item">
-          <div id='filter_records' class='selections2'>
-            <label for="filter_records">Filter the records (regex)
-              </br>
-              <select name="filter_records_field" id="filter_records_field">
+          <div id='filter_records_date' class='selections2'>
+            <label for="filter_records_date">Date to display
+              
+              <select name="filter_records_date_field" id="filter_records_date_field">
               </select>
-              <input type="text" name="filter_records" id="filter_records_text">
-              </input>
+              <button id="plus_dates">+</button>
+              <button id="minus_dates">-</button>
+
             </label>
           </div>
         </div>
       </div>
-
-
     </div>
-    <div id='loading'>
-    </div>
-    <div id='selected'>
-      <h1>Hover over voronoi areas to display statistics</h1>
+   
+   <div id='hover_panel'>
+      <h3>Hover over areas to display statistics</h3>
     
     </div>
-  
-    
-    <script src="js/third_party/jquery.min.js"></script>
-    <script src="js/third_party/topojson.min.js"></script>
-    <script src="js/third_party/handlebars-v4.0.5.js"></script>
-    <script src="js/third_party/underscore-min.js"></script>
-    <script src="js/third_party/d3.min.js"></script>
-    <script src="js/third_party/mapbox.js"></script>
-    <script src="data/uk_boundaries.js"></script>
-    <script src="data/csv_data.js"></script>
-    <script src="js/custom_code/column_description.js"></script>
-    <script src="js/custom_code/voronoi_map.js"></script>
 
-    <script id="view_location_info" type="text/x-handlebars-template">
-    <div class="entry">
-      <div>
-        <h2>{{name}}</h2>
-        <h4>Metric 1 = {{metric_1}}</h4>
-        <h4>Metric 2 = {{metric_2}}</h4>
-        <h4>Metric 3 = {{metric_3}}</h4>
+     <div id='hover_panel_charts'>
+      <h3>Hover over areas to display statistics</h3>
+    
+    </div>
+    
+    <script src="js/third_party/leaflet.txt"></script>
+    <script src="js/third_party/d3.txt"></script>
+    <script src="js/third_party/topojson.v1.min.txt"></script>
+    <script src="js/third_party/underscore.txt"></script>
+    <script src="js/third_party/jquery.txt"></script>
+    <script src="js/third_party/handlebars-v4.0.5.txt"></script>
+
+    <script src="js/custom_code/utils.txt"></script>
+    <script src="js/custom_code/settings.txt"></script>
+    <script src="js/custom_code/shapefilemap.txt"></script>
+    <script src="js/custom_code/little_line_chart.txt"></script>
+    <script src="js/custom_code/dataholder.txt"></script>
+    <script src="js/custom_code/main.txt"></script>
+    
+    <script id="hp_info" type="text/x-handlebars-template">
+      <div class="entry">
+        <div>
+          <h2>{{NAME}}</h2>
+          <h4>{{date}}</h4>
+          <h4>Metric 1 = {{metric_1}}</h4>
+          <h4>Metric 2 = {{metric_2}}</h4>
+          <h4>Metric 3 = {{metric_3}}</h4>
+        </div>
       </div>
-    </div>
-
-  
     </script>
 
 
