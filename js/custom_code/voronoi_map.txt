@@ -74,11 +74,11 @@ function VoronoiMap() {
                 }
             })
             .attr("r", function(d) {
-                if (isNaN(d[point_size_options_metric])) {return 4}
+                if (isNaN(d[point_size_options_metric])) {return 3}
                 if (point_size_options_metric == "none") {
                     var pointsize = d3.select("#shadingOptions").node().value
                     if (pointsize == "none") {
-                        return 6
+                        return 4
                     } else {
                         return 2
                     }
