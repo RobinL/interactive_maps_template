@@ -1,6 +1,6 @@
 var VMT = {} //VoronoiMapTemplate
 
-VMT.filter_field = "date"
+VMT.filter_field = "metric_1"
 
 VMT.shapefile_path = "topojson/uk_boundaries.json"
 VMT.csv_path = "data/data_template_messy.csv"
@@ -41,11 +41,7 @@ VMT.column_descriptions_data = {
     "metric 5": {
         "long_name": "My metric 5"
     },
-    "date": {
-        "val_parser": d3.time.format('%Y-%m-%d').parse,
-        "format": d3.time.format('%Y-%m-%d'),
-        "manually_included": false
-    }
+
 
 
 };

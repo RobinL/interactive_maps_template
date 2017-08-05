@@ -10,17 +10,13 @@ function DataHolder(csv_data) {
 
     this.filter_points = function() {
         // Field to filter on
-        var filter_value = $("#filter_records_date_field").val();
         
-        var filter_format = VMT.column_descriptions_data[VMT.filter_field].format
 
         me.current_points = []
 
-        var filter_format = VMT.column_descriptions_data[VMT.filter_field].format
         
-        this.current_points = _.filter(this.all_csv_data, function(d) {
-            return (filter_format(d[VMT.filter_field]) == filter_value)
-        })
+        this.current_points = this.all_csv_data
+
 
 
         var list_of_filters = []
@@ -43,9 +39,13 @@ function DataHolder(csv_data) {
 
         this.current_points = _.filter(this.current_points, function(d) {
 
-            return _.all(list_of_filters, function(this_filter){
-                return d[this_filter["column"]] == this_filter["value"]
-            })
+            if (list_of_filters.length == 0 ) {
+                return true
+            } else {
+                return _.all(list_of_filters, function(this_filter){
+                    return d[this_filter["column"]] == this_filter["value"]
+                })
+            }
 
         })
         
@@ -176,9 +176,7 @@ function DataHolder(csv_data) {
             })
         })
 
-        this.all_csv_data.sort(function(a,b) { 
-    return a[VMT.filter_field].getTime()-b[VMT.filter_field].getTime()
-    })
+        this.all_csv_data
     }
 
     this.set_domains = function(data_type) {
