@@ -244,8 +244,6 @@ function VoronoiMap() {
         d3.select('#hover_panel')
             .html(html)
 
-        // Display time series charts.
-        var ts_data = VMT.dataholder.get_timeseries_data(d["geography_id"])
         
         //Plot all fields which are continuous data, are manually include, and are not the VMT.filterfield
         var to_plot = []
@@ -259,13 +257,6 @@ function VoronoiMap() {
             return !_.contains(["lat", "lng"], d)
         })
 
-        d3.select("#hover_panel_charts").html("")
-
-        _.each(to_plot, function(d) {
-            holder = d3.select("#hover_panel_charts").append("div").attr("class","time_series_chart")
-            chart = new TimeSeriesChart(holder, d, ts_data)
-
-        })
 
     }
 

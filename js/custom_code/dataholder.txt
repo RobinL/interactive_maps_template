@@ -7,7 +7,6 @@ function DataHolder(csv_data) {
     this.current_points = []
     this.points_lookup = {}
 
-
     this.filter_points = function() {
         // Field to filter on
         
@@ -16,7 +15,6 @@ function DataHolder(csv_data) {
 
         
         this.current_points = this.all_csv_data
-
 
 
         var list_of_filters = []
@@ -286,18 +284,11 @@ function DataHolder(csv_data) {
 
     }
 
-    this.get_timeseries_data = function(this_geography_id) {
-
-        return  _.filter(this.all_csv_data, function(d) {
-            
-            return d["geography_id"] == this_geography_id
-        }) 
-
-    }
 
     //  Get rid of rows which don't have lat lng
     this.filter_out_invalid_coordinates = function() {
         this.all_csv_data = _.filter(this.all_csv_data, function(d) {
+        
             if (isNaN(d["lat"])) {
                 return false
             }
